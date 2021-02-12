@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-enum Direction
-{
-    Stay=0,
+enum States
+{   
+    Start = 0,
+    Pause,
     Right,
     Left,
     Top,
@@ -14,61 +15,78 @@ public class PlayerController : MonoBehaviour
 {
 
     public float MoveSpeed = 5.0f;
-    private Direction moveDirection = Direction.Stay;
-    private Transform transform;
-    public float horizontalInput;
-    public float verticalInput;
+    private States currentState = States.Start;
+    private States previousState;
+    private float horizontalInput;
+    private float verticalInput;
 
-    // Start is called before the first frame update
-    void Start()
+    public void PausePlayer()
     {
-        transform = GetComponent<Transform>(); 
+        previousState = currentState;
+        currentState = States.Pause;
     }
 
+    public void Respawn()
+    {
+        currentState = States.Start;
+    }
+
+    public void UnpausePlayer()
+    {
+        currentState = previousState;
+        previousState = States.Pause;
+    }
     // Update is called once per frame
     void FixedUpdate()
     {
         //получить инпут стрелки с клавиатуры
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
-        if (horizontalInput != 0)
+        if (currentState != States.Pause)
         {
-            verticalInput = 0;
+            horizontalInput = Input.GetAxis("Horizontal");
+            verticalInput = Input.GetAxis("Vertical");
+            if (horizontalInput != 0)
+            {
+                verticalInput = 0;
+            }
         }
         //изменить направление движения
-        if (horizontalInput == -1)
+        if (horizontalInput < 0)
         {
-            moveDirection = Direction.Left;
+            currentState = States.Left;
         }
-        if(horizontalInput == 1)
+        if(horizontalInput > 0)
         {
-            moveDirection = Direction.Right;
+            currentState = States.Right;
         }
-        if (verticalInput == -1)
+        if (verticalInput < 0)
         {
-            moveDirection = Direction.Down;
+            currentState = States.Down;
         }
-        if (verticalInput == 1)
+        if (verticalInput > 0)
         {
-            moveDirection = Direction.Top;
+            currentState = States.Top;
         }
         //изменить координату объект, передвинув его на несколько условных единиц
-        float moveDelta = MoveSpeed * Time.fixedDeltaTime;
-        if (moveDirection == Direction.Left)
+        Vector3 moveVector = Vector3.zero;
+        if (currentState == States.Top)
         {
-            transform.position = new Vector3(transform.position.x - moveDelta, transform.position.y, 0);
+            moveVector = Vector3.up;
         }
-        if(moveDirection == Direction.Right)
+        if (currentState == States.Down)
         {
-            transform.position = new Vector3(transform.position.x + moveDelta, transform.position.y, 0);
+            moveVector = Vector3.down;
         }
-        if (moveDirection == Direction.Top)
+        if (currentState == States.Left)
         {
-            transform.position = new Vector3(transform.position.x,transform.position.y + moveDelta, 0);
+            moveVector = Vector3.left;
         }
-        if(moveDirection == Direction.Down)
+        if (currentState == States.Right)
         {
-            transform.position = new Vector3(transform.position.x, transform.position.y - moveDelta, 0);
+            moveVector = Vector3.right;
         }
+
+        moveVector = moveVector * MoveSpeed * Time.fixedDeltaTime;
+
+        transform.position = transform.position + moveVector;
     }
 }
